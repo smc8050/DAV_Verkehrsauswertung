@@ -36,8 +36,11 @@ class IdCube:
     def sum_hours(self):
         return np.sum(self.A, 2), self.msid_vec, self.dates_vec
 
+    def save_cube(filename):
+        numpy.savetxt(filename, self.A, delimiter=",")
 
-def calculate_entries:
+
+def calculate_entries():
     msid_count = 180
     start_year = date(datetime.now().year, 1, 1)
     now = date.today()
