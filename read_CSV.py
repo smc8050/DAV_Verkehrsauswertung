@@ -16,7 +16,7 @@ def read_csv(msid_path, start, end, csv_url):
     start_year = datetime.date(datetime.datetime.now().year, 1, 1)
     now = datetime.date.today()
     delta = now - start_year
-    entries_count = msid_count * delta.days * 24 + datetime.now().hour * msid_count
+    entries_count = msid_count * delta.days * 24 + datetime.datetime.now().hour * msid_count
     progress = 0
 
     with closing(requests.get(csv_url, stream=True)) as r:
