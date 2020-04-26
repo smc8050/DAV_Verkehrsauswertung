@@ -2,6 +2,9 @@ import numpy as np
 from datetime import datetime, date
 
 class Timestamp:
+    '''
+        Datastructure to read and store datetime read from the data csv
+    '''
     def _convert(self, input_str):
         return datetime.strptime(input_str, '%Y-%m-%dT%H:%M:%S')
 
@@ -17,16 +20,21 @@ class Timestamp:
     def date(self):
         return self.timestamp
 
-# class evaluate:
-#
-#     def sum_hours(self, matrix):
-#         return np.sum(matrix, axis=2)
-#
-#     def sum_date(self, matrix):
-#         return np.sum(matrix, axis=1)
-#
-#
-# def plot_histogramm(A_flat, MSID_list):
+
+class IdCube:
+    '''
+        Datastructure to store output of read_csv function (dims: I,J,K : msid, day, hour)
+    '''
+    def __init__(self, A, msid_vec, dates_vec):
+        self.A = A
+        self.msid_vec = msid_vec
+        self.dates_vec = days_vec
+    
+    def sum_days(self):
+        return np.sum(self.A, 1), self.msid_vec
+
+    def sum_hours(self):
+        return np.sum(self.A, 2), self.msid_vec, self.dates_vec
 
 
 def calculate_entries:
