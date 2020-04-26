@@ -25,19 +25,19 @@ class IdCube:
     '''
         Datastructure to store output of read_csv function (dims: I,J,K : msid, day, hour)
     '''
-    def __init__(self, A, msid_list, dates_list):
+    def __init__(self, A, msid_list, date_list):
         self.A = A
         self.msid_list = msid_list
-        self.dates_list = dates_list
+        self.date_list = date_list
     
     def sum_days(self):
         return np.sum(self.A, 1), self.msid_list
 
     def sum_hours(self):
-        return np.sum(self.A, 2), self.msid_list, self.dates_list
+        return np.sum(self.A, 2), self.msid_list, self.date_list
 
-    def save_cube(filename):
-        numpy.savetxt(filename, self.A, delimiter=",")
+    def save_cube(self, filename):
+        np.savetxt(filename, self.A, delimiter=",")
 
 def calculate_entries():
     msid_count = 180
