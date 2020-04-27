@@ -33,7 +33,7 @@ class IdCube:
         self.date_list = date_list
     
     def sum_days(self):
-        return np.sum(self.A, 1), self.msid_list
+        return np.sum(self.A, 1), self.msid_list, self.date_list
 
     def sum_hours(self):
         return np.sum(self.A, 2), self.msid_list, self.date_list
