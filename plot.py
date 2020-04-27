@@ -23,7 +23,7 @@ class Plotter:
         print("Cube has shape: {:}".format(cube.A.shape))
 
 
-    def _plot_row(self, df, filename, title, xlabel):
+    def _plot_row(self, df, basename, title, xlabel):
         fig, ax = plt.subplots()
         df.plot(ax=ax,kind='bar')
         fig.autofmt_xdate()
@@ -33,10 +33,10 @@ class Plotter:
         plt.ylabel('AnzFahrzeuge', fontsize=7)
         plt.xticks(fontsize=6)
         plt.yticks(fontsize=6)
-        fig.savefig(filename, format='png', dpi=300)
+        fig.savefig(basename+'.png', format='png', dpi=300)
 
-    def _save_csv(df, filename):
-        pass
+    def _save_csv(self, df, basename):
+        df.to_csv(basename+'.csv', sep='\t')
 
     def plot_days(self):
         slice, msid_list, date_list = self.cube.sum_hours()
@@ -46,19 +46,24 @@ class Plotter:
         for index, row in df.iterrows():
             print(index)
             #row = df.iloc[index]
-            filename = os.path.join(self.sub_dirs[0], index+'.png')
+            basename = os.path.join(self.sub_dirs[0], index+'.png')
+            self._save_csv(row, basename)
             plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.time_interval
-            self._plot_row(row, filename, title=plot_title ,xlabel='Datum')
+            self._plot_row(row, basename, title=plot_title ,xlabel='Datum')
 
     def plot_hours(self):
         slice, msid_list, date_list = self.cube.sum_days()
-        hour_list = [str(i)+':00' for i in range(24)]
+        hour_list = 24*[0]
+        for i in range(24):
+            hour_list[i] = str(i)+':00'
+            if i < 10:
+                hour_list[i] = '0'+hour_list[i]
         # Create dataframe to plot
         df = pd.DataFrame(data=slice, index=msid_list, columns=hour_list)
         for index, row in df.iterrows():
             print(index)
-            #print(type(row))
             #row = df.iloc[index]
-            filename = os.path.join(self.sub_dirs[1], index+'.png')
+            basename = os.path.join(self.sub_dirs[1], index)
+            self._save_csv(row, basename)
             plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.time_interval
-            self._plot_row(row, filename, title=plot_title ,xlabel='Tageszeit')
+            self._plot_row(row, basename, title=plot_title ,xlabel='Tageszeit')
