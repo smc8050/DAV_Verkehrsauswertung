@@ -46,7 +46,7 @@ class Plotter:
         for index, row in df.iterrows():
             print(index)
             #row = df.iloc[index]
-            basename = os.path.join(self.sub_dirs[0], index+'.png')
+            basename = os.path.join(self.sub_dirs[0], index)
             self._save_csv(row, basename)
             plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.time_interval
             self._plot_row(row, basename, title=plot_title ,xlabel='Datum')

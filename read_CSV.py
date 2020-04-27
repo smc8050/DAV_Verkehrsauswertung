@@ -10,7 +10,7 @@ import pickle
 
 def read_csv(msid_path, start, end, csv_url):
 
-    debug = True
+    debug = False
     pickle_file = 'IdCube'
     if not debug:
 
