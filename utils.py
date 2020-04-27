@@ -1,5 +1,7 @@
+import numpy
 import numpy as np
 from datetime import datetime, date
+
 
 class Timestamp:
     '''
