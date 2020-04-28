@@ -1,8 +1,9 @@
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QCheckBox, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar, QLineEdit, QMessageBox
 from dav_auswertung import DavAuswertung
 from utils import Timestamp
+import re
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -23,7 +24,7 @@ class MyWindow(QMainWindow):
         if fileName:
             self.msid_list_path = fileName
             self.msid_path_btn.setStyleSheet("background-color: green")
-            if self.save_path != "" and self.msid_list_path != "" and self.start_date != "" and self.end_date != "":
+            if self.save_path != "" and self.msid_list_path != "" and self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
                 self.run_btn.setEnabled(True)
 
     def selectFolderDialog(self):
@@ -31,18 +32,35 @@ class MyWindow(QMainWindow):
         if folder_path:
             self.save_path = folder_path
             self.save_path_btn.setStyleSheet("background-color: green")
-            if self.save_path != "" and self.msid_list_path != "" and self.start_date != "" and self.end_date != "":
+            if self.save_path != "" and self.msid_list_path != "" and self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
                 self.run_btn.setEnabled(True)
 
     def run_calculation(self):
-
+        # Check Input URL
         if self.url_textbox.text() != "":
             self.csv_url = self.url_textbox.text()
         else:
             self.csv_url = "https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/44607195-a2ad-4f9b-b6f1-d26c003d85a2/download/sid_dav_verkehrszaehlung_miv_od2031_2020.csv"
-        self.start_date = self.start_date_textbox.text()
-        self.end_date = self.end_date_textbox.text()
-        DavAuswertung(self.save_path, self.csv_url, self.msid_list_path, Timestamp(self.start_date), Timestamp(self.end_date))
+
+        #Check Input date Format
+        if self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
+            r = re.compile('[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$')
+            if r.match(self.start_date_textbox.text()) and r.match(self.end_date_textbox.text()):
+                self.start_date = self.start_date_textbox.text()
+                self.end_date = self.end_date_textbox.text()
+                DavAuswertung(self.save_path, self.csv_url, self.msid_list_path, Timestamp(self.start_date),
+                              Timestamp(self.end_date))
+            else:
+                self.error_msg()
+
+
+    def error_msg(text):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("Error")
+        msg.setInformativeText('Datum Hat nicht das richtige Fromat!')
+        msg.setWindowTitle("Error")
+        msg.exec_()
 
     def initUI(self):
         self.setGeometry(200, 200, 430, 480)
@@ -110,7 +128,7 @@ class MyWindow(QMainWindow):
         self.run_btn.move(40, 250)
         self.run_btn.resize(350, 50)
         self.run_btn.clicked.connect(self.run_calculation)
-        self.run_btn.setEnabled(True)
+        self.run_btn.setEnabled(False)
 
         # progress Bar
         self.pbar = QProgressBar(self)
