@@ -3,12 +3,12 @@ from contextlib import closing
 import csv
 import numpy as np
 import datetime
-import os.path
-from os import path
 from utils import IdCube
 import pickle
 
-def read_csv(msid_path, start, end, csv_url):
+
+
+def read_csv( msid_path, start, end, csv_url):
 
     debug = False
     pickle_file = 'IdCube'
@@ -25,15 +25,11 @@ def read_csv(msid_path, start, end, csv_url):
         now = datetime.date.today()
         delta = now - start_year
         entries_count = msid_count * delta.days * 24 + datetime.datetime.now().hour * msid_count
-        progress = 0
 
         with closing(requests.get(csv_url, stream=True)) as r:
             f = (line.decode('utf-8') for line in r.iter_lines())
             reader = csv.reader(f, delimiter=',', quotechar='"')
             for row in reader:
-                progress += 1
-                progress_percent = progress / entries_count * 100
-                #Update progressbar here!
 
                 if len(row) != 0:
                     if row[0] in msid_list:

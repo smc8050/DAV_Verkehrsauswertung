@@ -101,7 +101,7 @@ class MyWindow(QMainWindow):
         self.start_date_textbox = QLineEdit(self)
         self.start_date_textbox.move(130, 145)
         self.start_date_textbox.resize(150, 20)
-        self.start_date_textbox.setPlaceholderText("2020-01-01T12:30:00")
+        self.start_date_textbox.setPlaceholderText("2020-01-01T00:00:00")
 
         # End Datum
         self.end_label = QtWidgets.QLabel(self)
@@ -112,7 +112,7 @@ class MyWindow(QMainWindow):
         self.end_date_textbox = QLineEdit(self)
         self.end_date_textbox.move(130, 170)
         self.end_date_textbox.resize(150, 20)
-        self.end_date_textbox.setPlaceholderText("2020-01-01T12:30:00")
+        self.end_date_textbox.setPlaceholderText("2020-01-01T00:00:00")
 
         # Select MSID List
         self.msid_path_btn = QtWidgets.QPushButton(self)
