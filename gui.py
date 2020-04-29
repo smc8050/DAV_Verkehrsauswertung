@@ -4,13 +4,13 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QProgressBar
 from dav_auswertung import DavAuswertung
 from utils import Timestamp
 import re
+import time
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
         self.initUI()
         QApplication.processEvents()  # update GUI while running functions
-
         self.save_path = ""
         self.csv_url = ""
         self.msid_list_path = ""
@@ -46,24 +46,37 @@ class MyWindow(QMainWindow):
         if self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
             r = re.compile('[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$')
             if r.match(self.start_date_textbox.text()) and r.match(self.end_date_textbox.text()):
+
+                self.run_btn.setStyleSheet("background-color: orange")
+                self.run_btn.setText("Daten werden geladen...")
+                self.run_btn.setEnabled(False)
+
                 self.start_date = self.start_date_textbox.text()
                 self.end_date = self.end_date_textbox.text()
                 DavAuswertung(self.save_path, self.csv_url, self.msid_list_path, Timestamp(self.start_date),
                               Timestamp(self.end_date))
+
+                self.run_btn.setStyleSheet("background-color: green")
+                self.run_btn.setEnabled(True)
+                self.run_btn.setText("Daten erneut auswerten")
+                self.runing_label.setText("Daten sind ausgewertet!")
+                self.runing_label.adjustSize()
             else:
                 self.error_msg()
 
 
     def error_msg(text):
         msg = QMessageBox()
+        msg.setGeometry(215, 250, 100, 100)
+        msg.setBaseSize(400,150)
         msg.setIcon(QMessageBox.Critical)
-        msg.setText("Error")
-        msg.setInformativeText('Datum Hat nicht das richtige Fromat!')
-        msg.setWindowTitle("Error")
+        msg.setText("Format-Fehler")
+        msg.setInformativeText('Das Datum hat nicht folgendes Format:\n[YYYY]-[MM]-[DD]T[hh]:[mm]:[ss]')
+        msg.setWindowTitle("Format-Fehler")
         msg.exec_()
 
     def initUI(self):
-        self.setGeometry(200, 200, 430, 480)
+        self.setGeometry(200, 200, 430, 450)
         self.setWindowTitle("DAV Verkehrsauswertung")
 
         self.url_label = QtWidgets.QLabel(self)
@@ -125,31 +138,21 @@ class MyWindow(QMainWindow):
         # RUN Button
         self.run_btn = QtWidgets.QPushButton(self)
         self.run_btn.setText("Daten auswerten")
-        self.run_btn.move(40, 250)
+        self.run_btn.move(40, 255)
         self.run_btn.resize(350, 50)
         self.run_btn.clicked.connect(self.run_calculation)
         self.run_btn.setEnabled(False)
 
-        # progress Bar
-        self.pbar = QProgressBar(self)
-        self.pbar.setGeometry(45, 300, 340, 25)
-
-        # Progress Label
-        self.progress_label = QtWidgets.QLabel(self)
-        self.progress_label.setText("-/-")
-        self.progress_label.move(55, 320)
-        self.progress_label.adjustSize()
-
-        # estimated Time
-        self.estimated_time = QtWidgets.QLabel(self)
-        self.estimated_time.setText("Verbleibende Zeit: -")
-        self.estimated_time.move(55, 340)
-        self.estimated_time.adjustSize()
+        # Running Label
+        self.runing_label = QtWidgets.QLabel(self)
+        self.runing_label.setText("")
+        self.runing_label.move(50, 310)
+        self.runing_label.adjustSize()
 
         # Quit Button
         self.quit_btn = QtWidgets.QPushButton(self)
         self.quit_btn.setText("Beenden")
-        self.quit_btn.move(40, 380)
+        self.quit_btn.move(40, 350)
         self.quit_btn.resize(350, 50)
         self.quit_btn.clicked.connect(self.close)
 
@@ -159,6 +162,7 @@ def window():
     win = MyWindow()
     win.show()
     sys.exit(app.exec_())
+
 
 
 window()

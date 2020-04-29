@@ -8,7 +8,7 @@ import pickle
 
 
 
-def read_csv( msid_path, start, end, csv_url):
+def read_csv(msid_path, start, end, csv_url):
 
     debug = False
     pickle_file = 'IdCube'
@@ -31,7 +31,7 @@ def read_csv( msid_path, start, end, csv_url):
             reader = csv.reader(f, delimiter=',', quotechar='"')
             for row in reader:
 
-                if len(row) != 0:
+                if len(row) != 0 and row[19]!='':
                     if row[0] in msid_list:
                         if start.isSmaller(row[17]) and end.isBigger(row[17]):
                             i = msid_list.index(row[0])
