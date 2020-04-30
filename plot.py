@@ -1,15 +1,16 @@
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import csv
 import pandas as pd
 from utils import IdCube
 
 class Plotter:
     def __init__(self, root_dir, cube):
-        self.root_dir = 'export_'+str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
-        self.sub_dirs = [self.root_dir+'/byDays', self.root_dir+'/byHours']
+        # Create foder structure if not existent in location root_dir
+        self.root_dir = os.path.join(root_dir,'export_'+str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")))
+        self.sub_dirs = [os.path.join(self.root_dir, 'byDays'), 
+                        os.path.join(self.root_dir, 'byHours')]
         if not os.path.isdir(self.root_dir):
             os.makedirs(self.root_dir)
         for dir in self.sub_dirs:
@@ -59,8 +60,8 @@ class Plotter:
         df = pd.DataFrame(data=slice, index=msid_list, columns=date_list)
         for index, row in df.iterrows():
             print(index)
-            #row = df.iloc[index]
             basename = os.path.join(self.sub_dirs[0], index)
+            # Uncomment to save csv of data used to generate a plot
             #self._save_csv(row, basename)
             plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.time_interval
             self._plot_row(row, basename, title=plot_title ,xlabel='Datum')
@@ -83,6 +84,7 @@ class Plotter:
         for index, row in df.iterrows():
             print(index)
             basename = os.path.join(self.sub_dirs[1], index)
+            # Uncomment to save csv of data used to generate a plot
             #self._save_csv(row, basename)
             plot_title = 'Tagessumme Durchschnitt (MSID: '+index+')\n\nZeitraum: '+self.time_interval
             self._plot_row(row, basename, title=plot_title ,xlabel='Tageszeit')

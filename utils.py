@@ -1,11 +1,10 @@
-import numpy
 import numpy as np
 from datetime import datetime, date
 
 
 class Timestamp:
     '''
-        Datastructure to read and store datetime read from the data csv
+        Class to read and store datetime read from the data csv
     '''
     def _convert(self, input_str):
         return datetime.strptime(input_str, '%Y-%m-%dT%H:%M:%S')
@@ -48,6 +47,3 @@ def calculate_entries():
     delta = now - start_year
     entries_count = msid_count * delta.days * 24 + datetime.now().hour * msid_count
     return entries_count
-
-
-
