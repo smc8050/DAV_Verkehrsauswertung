@@ -1,31 +1,54 @@
 import os
+from abc import ABC, abstractmethod
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.dates import bytespdate2num, num2date
+from matplotlib.ticker import Formatter
 import csv
 import pandas as pd
+import numpy as np
 from utils import IdCube
 
-class Plotter:
+
+class MyFormatter(Formatter):
+    def __init__(self, dates, fmt='%Y-%m-%d'):
+        self.dates = dates
+        self.fmt = fmt
+
+    def __call__(self, x, pos=0):
+        'Return the label for time x at position pos'
+        ind = int(np.round(x))
+        if ind >= len(self.dates) or ind < 0:
+            return ''
+
+        return num2date(self.dates[ind]).strftime(self.fmt)
+
+class PlotStrategy:
     def __init__(self, root_dir, cube):
         # Create foder structure if not existent in location root_dir
         self.root_dir = os.path.join(root_dir,'export_'+str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")))
-        self.sub_dirs = [os.path.join(self.root_dir, 'byDays'), 
-                        os.path.join(self.root_dir, 'byHours')]
+        self.sub_dir = self.root_dir
         if not os.path.isdir(self.root_dir):
             os.makedirs(self.root_dir)
-        for dir in self.sub_dirs:
-            if not os.path.isdir(dir):
-                os.makedirs(dir)
+        """
+        self.sub_dir = os.path.join(self.root_dir, 'byDays')
+        if not os.path.isdir(self.sub_dir):
+            os.makedirs(self.sub_dir)
+        """
         self.cube = cube
 
-        self.time_interval = cube.date_list[0].strftime('%d/%m/%Y')+' - '+ \
+        self.date_interval = cube.date_list[0].strftime('%d/%m/%Y')+' - '+ \
                             cube.date_list[-1].strftime('%d/%m/%Y')
         print("Cube has shape: {:}".format(cube.A.shape))
+    
+    @abstractmethod
+    def plot(self):
+        pass
 
-
-    def _plot_row(self, df, basename, title, xlabel):
+    def _plot_curve(self, df, basename, title, xlabel, plot_kind='line'):
         fig, ax = plt.subplots()
-        df.plot(ax=ax,kind='bar', color=(0.1, 1, 1, 1))
+        df.plot(ax=ax, kind=plot_kind, color=(0, 0.3, 0.7, 1))
 
         # Formatting of graph
         plt.rcParams['axes.edgecolor']='#333F4B'
@@ -49,45 +72,92 @@ class Plotter:
         plt.yticks(fontsize=6)
         fig.savefig(basename+'.png', format='png', dpi=300)
 
+        #plt.show()
+    
     def _save_csv(self, df, basename):
         df.to_csv(basename+'.csv', sep=',')
 
-    def plot_days(self):
+class PlotterContext():
+    def __init__(self, strategy: PlotStrategy) -> None:
+        self._strategy = strategy
+    
+    @property
+    def strategy(self) -> PlotStrategy:
+        return self._strategy
+
+    @strategy.setter
+    def strategy(self, strategy: PlotStrategy) -> None:
+        self._strategy = strategy
+    
+    def plot(self) -> None:
+        self._strategy.plot()
+    
+
+"""Default plotting strategy which just sums over the whole day / hours in interval
+"""
+class DefaultPlotter(PlotStrategy):
+    def __init__(self, *inputs):
+        super(DefaultPlotter, self).__init__(*inputs)
+    
+    def plot(self):
         print("Processing sorted by days:")
         slice, msid_list, date_list = self.cube.sum_hours()
         date_list = [d.date() for d in date_list]
         # Create dataframe to plot
         df = pd.DataFrame(data=slice, index=msid_list, columns=date_list)
+        
+        kind = 'bar' if len(date_list) < 25 else 'line'
         for index, row in df.iterrows():
             print(index)
-            basename = os.path.join(self.sub_dirs[0], index)
+            basename = os.path.join(self.sub_dir, index)
             # Uncomment to save csv of data used to generate a plot
             #self._save_csv(row, basename)
-            plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.time_interval
-            self._plot_row(row, basename, title=plot_title ,xlabel='Datum')
-        
-        # Save the whole slice to a csv
-        self._save_csv(df, os.path.join(self.sub_dirs[0],'tage_summe'))
+            plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.date_interval
+            self._plot_curve(row, basename, title=plot_title ,xlabel='Datum', plot_kind=kind)
 
-    def plot_hours(self):
-        print("Processing sorted by days:")
-        slice, msid_list, date_list = self.cube.sum_days()
-        num_days = len(date_list)
-        hour_list = 24*[0]
-        for i in range(24):
-            hour_list[i] = str(i)+':00'
-            if i < 10:
-                hour_list[i] = '0'+hour_list[i]
-        # Create dataframe to plot and divide by the number of days summed
-        # to obtain the average frequence
-        df = pd.DataFrame(data=slice, index=msid_list, columns=hour_list).div(num_days)
-        for index, row in df.iterrows():
-            print(index)
-            basename = os.path.join(self.sub_dirs[1], index)
-            # Uncomment to save csv of data used to generate a plot
-            #self._save_csv(row, basename)
-            plot_title = 'Tagessumme Durchschnitt (MSID: '+index+')\n\nZeitraum: '+self.time_interval
-            self._plot_row(row, basename, title=plot_title ,xlabel='Tageszeit')
-        
         # Save the whole slice to a csv
-        self._save_csv(df, os.path.join(self.sub_dirs[1],'stunden_durchschnitt'))
+        self._save_csv(df, os.path.join(self.sub_dir,'tage_summe'))
+
+
+"""Extends the functionality of DefaultPlotter by summing also \
+    MSP (Morgenspitze) and ASP (Abendspitze)
+"""
+class ExtendedPlotter(PlotStrategy):
+    def __init__(self, *inputs):
+        super(ExtendedPlotter, self).__init__(*inputs)
+        self.msp_interval = [6,9]
+        self.asp_interval = [16,19]
+        self.msp_cube = self.cube.get_dayslice(self.msp_interval)
+        self.asp_cube = self.cube.get_dayslice(self.asp_interval)
+
+    def plot(self):
+        print("Processing sorted by days:")
+        slice, msid_list, date_list = self.cube.sum_hours()
+        msp_slice, _, _ = self.msp_cube.sum_hours()
+        asp_slice, _, _ = self.asp_cube.sum_hours()
+
+        date_list = [d.date() for d in date_list]
+        # Create dataframe to plot
+        df_total = pd.DataFrame(data=slice, index=msid_list, columns=date_list)
+        df_msp = pd.DataFrame(data=msp_slice, index=msid_list, columns=date_list)
+        df_asp = pd.DataFrame(data=asp_slice, index=msid_list, columns=date_list)
+
+        kind = 'bar' if len(date_list) < 25 else 'line'
+        for (index, row), (_, row_msp), (_, row_asp) in zip(df_total.iterrows(), df_msp.iterrows(), df_asp.iterrows()):
+            print(index)
+            basedir = os.path.join(self.sub_dir, index)
+            os.makedirs(basedir)
+            # Uncomment to save csv of data used to generate a plot
+            plot_title = 'Tagessumme (MSID: '+index+')\n\nZeitraum: '+self.date_interval
+            self._plot_curve(row, basedir+'/gesamt', title=plot_title ,xlabel='Datum', plot_kind=kind)
+            time_interval = "{0:02d} - {1:02d} Uhr".format(*self.msp_interval)
+            plot_title = 'Summe Morgenspitze '+time_interval+' (MSID: '+index+')\n\nZeitraum: '+self.date_interval
+            self._plot_curve(row_msp, basedir+'/msp', title=plot_title ,xlabel='Datum', plot_kind=kind)
+            time_interval = "{0:02d} - {1:02d} Uhr".format(*self.asp_interval)
+            plot_title = 'Summe Abendspitze '+time_interval+' (MSID: '+index+')\n\nZeitraum: '+self.date_interval
+            self._plot_curve(row_asp, basedir+'/asp', title=plot_title ,xlabel='Datum', plot_kind=kind)
+
+        # Save the whole slice to a csv
+        self._save_csv(df_total, os.path.join(self.sub_dir, 'tage_summe'))
+        self._save_csv(df_msp, os.path.join(self.sub_dir, 'msp_summe'))
+        self._save_csv(df_asp, os.path.join(self.sub_dir, 'asp_summe'))

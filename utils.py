@@ -31,6 +31,10 @@ class IdCube:
         self.msid_list = msid_list
         self.date_list = date_list
     
+    def get_dayslice(self, interval):
+        interval_matrix = self.A[:, :, interval[0]:interval[1]]
+        return IdCube(interval_matrix, self.msid_list, self.date_list)
+
     def sum_days(self):
         return np.sum(self.A, 1), self.msid_list, self.date_list
 
@@ -39,11 +43,3 @@ class IdCube:
 
     def save_cube(self, filename):
         np.savetxt(filename, self.A, delimiter=",")
-
-def calculate_entries():
-    msid_count = 180
-    start_year = date(datetime.now().year, 1, 1)
-    now = date.today()
-    delta = now - start_year
-    entries_count = msid_count * delta.days * 24 + datetime.now().hour * msid_count
-    return entries_count
