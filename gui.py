@@ -64,11 +64,9 @@ class MyWindow(QMainWindow):
                 self.run_btn.setText("Daten werden geladen...")
                 self.run_btn.setEnabled(False)
                 QApplication.processEvents()
-
                 DavAuswertung(self.save_path, self.csv_url, self.msid_list_path, Timestamp(start_date),
                               Timestamp(end_date), msp_asp)
 
-                #self.run_btn.setStyleSheet("background-color: green")
                 self.run_btn.setEnabled(True)
                 self.run_btn.setText("Daten erneut auswerten")
                 self.runing_label.setText("Daten sind ausgewertet!")
