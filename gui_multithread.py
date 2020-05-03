@@ -1,22 +1,65 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QLineEdit, QMessageBox, QCheckBox, QLabel
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+import time
 from dav_auswertung import DavAuswertung
 from utils import Timestamp
 import re
-import os
+
+class WorkerSignals(QObject):
+    '''
+    Defines the signals available from a running worker thread.
+    '''
+    finished = pyqtSignal()
+    error_exit = pyqtSignal()
+
+class Worker(QRunnable):
+    '''
+    Worker thread
+
+    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+
+    :param callback: The function callback to run on this worker thread. Supplied args and
+                     kwargs will be passed through to the runner.
+    :type callback: function
+    :param args: Arguments to pass to the callback function
+    :param kwargs: Keywords to pass to the callback function
+
+    '''
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+
+        # Retrieve args/kwargs here; and fire processing using them
+        self.fn(*self.args)
+        self.signals.finished.emit()  # Done
 
 
 class MyWindow(QMainWindow):
     def __init__(self):
         super(MyWindow, self).__init__()
         self.initUI()
-        QApplication.processEvents()  # update GUI while running functions
         self.save_path = ""
         self.csv_url = ""
         self.msid_list_path = ""
         self.start_date = ""
         self.end_date = ""
+
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         sshFile = "dav_gui.stylesheet"
         with open(sshFile, "r") as fh:
@@ -41,7 +84,20 @@ class MyWindow(QMainWindow):
             if self.save_path != "" and self.msid_list_path != "" and self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
                 self.run_btn.setEnabled(True)
 
-    def run_calculation(self):
+    def thread_complete(self):
+        self.run_btn.setEnabled(True)
+        self.run_btn.setText("Daten erneut auswerten")
+        self.done_text.setText("Daten sind ausgewertet!")
+        self.done_text.setVisible(True)
+        self.done_text.adjustSize()
+        self.running_spinner.setVisible(False)
+        self.running_text.setVisible(False)
+        self.done_icon.setVisible(True)
+
+        print("THREAD COMPLETE!")
+
+    def start_thread(self):
+
         # Check Input URL
         if self.url_textbox.text() != "":
             self.csv_url = self.url_textbox.text()
@@ -54,29 +110,30 @@ class MyWindow(QMainWindow):
 
         # Check Input date Format
         if self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
-
             start_date = self.start_date_textbox.text() + "T00:00:00"
             end_date = self.end_date_textbox.text() + "T23:00:00"
             r = re.compile('[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$')
             if r.match(start_date) and r.match(end_date):
-
-                #self.run_btn.setStyleSheet("background-color: orange")
                 self.run_btn.setText("Daten werden geladen...")
                 self.run_btn.setEnabled(False)
-                QApplication.processEvents()
+                self.running_spinner.setVisible(True)
+                self.running_text.setVisible(True)
+                self.done_icon.setVisible(False)
+                self.done_text.setVisible(False)
 
-                DavAuswertung(self.save_path, self.csv_url, self.msid_list_path, Timestamp(start_date),
-                              Timestamp(end_date), msp_asp)
+                # Pass the function and its arguments to execute
+                save_path = self.save_path
+                csv_url = self.csv_url
+                msid_list_path = self.msid_list_path
 
-                #self.run_btn.setStyleSheet("background-color: green")
-                self.run_btn.setEnabled(True)
-                self.run_btn.setText("Daten erneut auswerten")
-                self.runing_label.setText("Daten sind ausgewertet!")
-                self.runing_label.adjustSize()
-                self.done_label.setVisible(True)
-                QApplication.processEvents()
+                worker = Worker(DavAuswertung, save_path, csv_url, msid_list_path, Timestamp(start_date),
+                                Timestamp(end_date), msp_asp)
+                worker.signals.finished.connect(self.thread_complete)
+                # Execute
+                self.threadpool.start(worker)
             else:
-                self.error_msg()
+                self.run_btn.setEnabled(True)
+
 
     def error_msg(text):
         msg = QMessageBox()
@@ -110,7 +167,6 @@ class MyWindow(QMainWindow):
         self.save_path_btn.move(40, 80)
         self.save_path_btn.resize(350, 50)
         self.save_path_btn.clicked.connect(self.selectFolderDialog)
-        # self.save_path_btn.setStyleSheet("background-color: orange")
         self.save_path_btn.setIcon(QtGui.QIcon("./gui_icons/document-save-2.png"))
         self.save_path_btn.setIconSize(QtCore.QSize(30, 30))
 
@@ -131,6 +187,7 @@ class MyWindow(QMainWindow):
         self.start_date_textbox.move(130, 165)
         self.start_date_textbox.resize(150, 20)
         self.start_date_textbox.setPlaceholderText("YYYY-MM-DD")
+        self.start_date_textbox.setText("2020-01-01")
 
         # End Datum
         self.end_label = QtWidgets.QLabel(self)
@@ -142,6 +199,7 @@ class MyWindow(QMainWindow):
         self.end_date_textbox.move(130, 190)
         self.end_date_textbox.resize(150, 20)
         self.end_date_textbox.setPlaceholderText("YYYY-MM-DD")
+        self.end_date_textbox.setText("2020-01-05")
 
         self.check_msp_asp = QCheckBox("MSP/ASP Auswerten", self)
         self.check_msp_asp.move(50, 205)
@@ -163,20 +221,40 @@ class MyWindow(QMainWindow):
         self.run_btn.setText("Daten auswerten")
         self.run_btn.move(40, 295)
         self.run_btn.resize(350, 50)
-        self.run_btn.clicked.connect(self.run_calculation)
+        self.run_btn.clicked.connect(self.start_thread)
         self.run_btn.setEnabled(False)
         self.run_btn.setIcon(QtGui.QIcon("./gui_icons/download-2.png"))
         self.run_btn.setIconSize(QtCore.QSize(30, 30))
 
+
         # Running Label
-        self.runing_label = QtWidgets.QLabel(self)
-        self.runing_label.setText("")
-        self.runing_label.move(70, 350)
-        self.runing_label.adjustSize()
-        self.done_label = QLabel(self)
-        self.done_label.setPixmap(QtGui.QPixmap("./gui_icons/dialog-ok-apply-6.png").scaled(20, 20, QtCore.Qt.KeepAspectRatio))
-        self.done_label.move(43, 343)
-        self.done_label.setVisible(False)
+        self.running_text = QtWidgets.QLabel(self)
+        self.running_text.setText("Daten werden ausgewertet...")
+        self.running_text.move(70, 350)
+        self.running_text.adjustSize()
+        self.running_text.setVisible(False)
+
+        self.running_spinner = QtWidgets.QLabel(self)
+        movie = QtGui.QMovie("./gui_icons/pacman.gif")
+        movie.setScaledSize(QtCore.QSize(30, 30))
+        self.running_spinner.setMovie(movie)
+        self.running_spinner.move(42, 343)
+        self.running_spinner.setVisible(False)
+        movie.start()
+
+
+
+
+        # Done Label
+        self.done_text = QtWidgets.QLabel(self)
+        self.done_text.setText("")
+        self.done_text.move(70, 350)
+        self.done_text.adjustSize()
+        self.done_icon = QLabel(self)
+        self.done_icon.setPixmap(QtGui.QPixmap("./gui_icons/dialog-ok-apply-6.png").scaled(20, 20, QtCore.Qt.KeepAspectRatio))
+        self.done_icon.move(43, 343)
+        self.done_icon.setVisible(False)
+
 
         # Quit Button
         self.quit_btn = QtWidgets.QPushButton(self)
