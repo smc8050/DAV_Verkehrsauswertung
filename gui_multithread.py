@@ -75,7 +75,7 @@ class MyWindow(QMainWindow):
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog # <- uncomment for fancier dialog
         fileName, _ = QFileDialog.getOpenFileName(self, "MSID Liste wählen", "", "TXT Files (*.txt);;All Files (*)",
-                                                  options=options)
+                                                options=options)
         if fileName:
             self.msid_list_path = fileName
             self.msid_path_btn.setStyleSheet("background-color: LightGreen")
@@ -181,6 +181,14 @@ class MyWindow(QMainWindow):
         self.run_btn.setEnabled(True)
 
     def initUI(self):
+
+        # deploy parameter
+        deploy = True
+        if deploy:
+            self.gui_icon_folder = ""
+        else:
+            self.gui_icon_folder = "gui_icons/"
+
         self.setGeometry(200, 200, 430, 450)
         self.setWindowTitle("DAV Verkehrsauswertung")
         self.url_label = QtWidgets.QLabel(self)
@@ -201,7 +209,7 @@ class MyWindow(QMainWindow):
         self.save_path_btn.move(40, 80)
         self.save_path_btn.resize(350, 50)
         self.save_path_btn.clicked.connect(self.selectFolderDialog)
-        self.save_path_btn.setIcon(QtGui.QIcon("./gui_icons/document-save-2.png"))
+        self.save_path_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"document-save-2.png"))
         self.save_path_btn.setIconSize(QtCore.QSize(30, 30))
 
         # Datumsformat Hinweis
@@ -234,7 +242,7 @@ class MyWindow(QMainWindow):
         self.end_date_textbox.setPlaceholderText("YYYY-MM-DD")
 
         # MSP/ASP checkbox
-        self.check_msp_asp = QCheckBox("MSP/ASP Auswerten", self)
+        self.check_msp_asp = QCheckBox("MSP/ASP auswerten", self)
         self.check_msp_asp.move(50, 205)
         self.check_msp_asp.resize(320, 40)
         self.check_msp_asp.setChecked(True)
@@ -251,7 +259,7 @@ class MyWindow(QMainWindow):
         self.msid_path_btn.move(40, 240)
         self.msid_path_btn.resize(350, 50)
         self.msid_path_btn.clicked.connect(self.openFileNameDialog)
-        self.msid_path_btn.setIcon(QtGui.QIcon("./gui_icons/txt.png"))
+        self.msid_path_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"txt.png"))
         self.msid_path_btn.setIconSize(QtCore.QSize(30, 30))
 
         # RUN Button
@@ -261,7 +269,7 @@ class MyWindow(QMainWindow):
         self.run_btn.resize(350, 50)
         self.run_btn.clicked.connect(self.start_thread)
         self.run_btn.setEnabled(False)
-        self.run_btn.setIcon(QtGui.QIcon("./gui_icons/download-2.png"))
+        self.run_btn.setIcon(QtGui.QIcon("./download-2.png"))
         self.run_btn.setIconSize(QtCore.QSize(30, 30))
 
         # Running Label
@@ -272,7 +280,7 @@ class MyWindow(QMainWindow):
         self.running_text.setVisible(False)
 
         self.running_spinner = QtWidgets.QLabel(self)
-        movie = QtGui.QMovie("./gui_icons/pacman_blue.gif")
+        movie = QtGui.QMovie("./pacman_blue.gif")
         movie.setScaledSize(QtCore.QSize(30, 30))
         self.running_spinner.setMovie(movie)
         self.running_spinner.move(210, 343)
@@ -285,7 +293,7 @@ class MyWindow(QMainWindow):
         self.done_text.move(70, 350)
         self.done_text.adjustSize()
         self.done_icon = QLabel(self)
-        self.done_icon.setPixmap(QtGui.QPixmap("./gui_icons/dialog-ok-apply-6.png").scaled(20, 20, QtCore.Qt.KeepAspectRatio))
+        self.done_icon.setPixmap(QtGui.QPixmap("./"+self.gui_icon_folder+"dialog-ok-apply-6.png").scaled(20, 20, QtCore.Qt.KeepAspectRatio))
         self.done_icon.move(43, 343)
         self.done_icon.setVisible(False)
 
@@ -295,7 +303,7 @@ class MyWindow(QMainWindow):
         self.quit_btn.move(40, 370)
         self.quit_btn.resize(350, 50)
         self.quit_btn.clicked.connect(self.close)
-        self.quit_btn.setIcon(QtGui.QIcon("./gui_icons/application-exit-2.png"))
+        self.quit_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"application-exit-2.png"))
         self.quit_btn.setIconSize(QtCore.QSize(30, 30))
 
         # Version Label
@@ -306,6 +314,7 @@ class MyWindow(QMainWindow):
 
 
 def window():
+
     app = QApplication(sys.argv)
     win = MyWindow()
     win.show()
