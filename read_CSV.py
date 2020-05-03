@@ -6,8 +6,6 @@ import datetime
 from utils import IdCube
 import pickle
 
-
-
 def read_csv(msid_path, start, end, csv_url):
 
     debug = False
@@ -19,12 +17,6 @@ def read_csv(msid_path, start, end, csv_url):
         J = (end.date() - start.date()).days + 1
         K = 24
         A = np.zeros((I, J, K), dtype=np.int32)
-
-        msid_count = 185
-        start_year = datetime.date(datetime.datetime.now().year, 1, 1)
-        now = datetime.date.today()
-        delta = now - start_year
-        entries_count = msid_count * delta.days * 24 + datetime.datetime.now().hour * msid_count
 
         with closing(requests.get(csv_url, stream=True)) as r:
             f = (line.decode('utf-8') for line in r.iter_lines())
@@ -42,16 +34,15 @@ def read_csv(msid_path, start, end, csv_url):
 
         base = start.date()
         date_list = [base + datetime.timedelta(days=x) for x in range(J)]
+        new_IdCube = IdCube(A, msid_list, date_list)
+
         pickle_outfile = open(pickle_file, 'wb')
-        pickle.dump(IdCube(A, msid_list, date_list), pickle_outfile)
+        pickle.dump(new_IdCube, pickle_outfile)
         pickle_outfile.close()
 
-    pickle_infile = open(pickle_file, 'rb')
-    pickled_IdCube = pickle.load(pickle_infile)
-    pickle_infile.close()
+    if debug:
+        pickle_infile = open(pickle_file, 'rb')
+        new_IdCube = pickle.load(pickle_infile)
+        pickle_infile.close()
 
-    return pickled_IdCube
-
-    # with open('outfile.txt', 'wb') as f:
-    #     for line in A:
-    #         np.savetxt(f, line, fmt='%.2f')
+    return new_IdCube
