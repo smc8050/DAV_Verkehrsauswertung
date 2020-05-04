@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from dav_auswertung import DavAuswertung
 from utils import Timestamp
-import re, glob, os
+import re, glob, os, datetime
 
 class WorkerSignals(QObject):
     '''
@@ -180,6 +180,20 @@ class MyWindow(QMainWindow):
         self.save_path_btn.setStyleSheet("background-color: LightGreen")
         self.run_btn.setEnabled(True)
 
+    def quickfill_start(self):
+        d = datetime.date.today()
+        year_str = '{:04d}'.format(d.year)
+        month_str = '01'
+        day_str = '01'
+        self.start_date_textbox.setText(year_str+"-"+month_str+"-"+day_str)
+
+    def quickfill_end(self):
+        d = datetime.date.today()
+        year_str = '{:04d}'.format(d.year)
+        month_str = '{:02d}'.format(d.month)
+        day_str = '{:02d}'.format(d.day)
+        self.end_date_textbox.setText(year_str + "-" + month_str + "-" + day_str)
+
     def initUI(self):
 
         # deploy parameter
@@ -189,7 +203,7 @@ class MyWindow(QMainWindow):
         else:
             self.gui_icon_folder = "gui_icons/"
 
-        self.setGeometry(200, 200, 430, 450)
+        self.setGeometry(200, 200, 430, 470)
         self.setWindowTitle("DAV Verkehrsauswertung")
         self.url_label = QtWidgets.QLabel(self)
         self.url_label.setText("URL zum Online CSV file\n(Leer lassen für Daten von 2020):")
@@ -230,6 +244,14 @@ class MyWindow(QMainWindow):
         self.start_date_textbox.resize(150, 20)
         self.start_date_textbox.setPlaceholderText("YYYY-MM-DD")
 
+        # Start Datum Quickfill Button
+        self.start_date_quickfill_btn = QtWidgets.QPushButton(self)
+        self.start_date_quickfill_btn.setText("Jahresbeginn")
+        self.start_date_quickfill_btn.move(290, 164)
+        self.start_date_quickfill_btn.resize(100, 22)
+        self.start_date_quickfill_btn.clicked.connect(self.quickfill_start)
+
+
         # End Datum
         self.end_label = QtWidgets.QLabel(self)
         self.end_label.setText("End Datum:")
@@ -240,6 +262,13 @@ class MyWindow(QMainWindow):
         self.end_date_textbox.move(130, 190)
         self.end_date_textbox.resize(150, 20)
         self.end_date_textbox.setPlaceholderText("YYYY-MM-DD")
+
+        # End Datum Quickfill Button
+        self.end_date_quickfill_btn = QtWidgets.QPushButton(self)
+        self.end_date_quickfill_btn.setText("Heute")
+        self.end_date_quickfill_btn.move(290, 189)
+        self.end_date_quickfill_btn.resize(100, 22)
+        self.end_date_quickfill_btn.clicked.connect(self.quickfill_end)
 
         # MSP/ASP checkbox
         self.check_msp_asp = QCheckBox("MSP/ASP auswerten", self)
@@ -253,10 +282,16 @@ class MyWindow(QMainWindow):
         self.check_do_plots.resize(320, 40)
         self.check_do_plots.setChecked(True)
 
+        # Exclude weekends checkbox
+        self.check_weekends = QCheckBox("Wochenenden auswerten", self)
+        self.check_weekends.move(50, 225)
+        self.check_weekends.resize(320, 40)
+        self.check_weekends.setChecked(False)
+
         # Select MSID List
         self.msid_path_btn = QtWidgets.QPushButton(self)
         self.msid_path_btn.setText("MSID Liste wählen")
-        self.msid_path_btn.move(40, 240)
+        self.msid_path_btn.move(40, 260)
         self.msid_path_btn.resize(350, 50)
         self.msid_path_btn.clicked.connect(self.openFileNameDialog)
         self.msid_path_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"txt.png"))
@@ -265,7 +300,7 @@ class MyWindow(QMainWindow):
         # RUN Button
         self.run_btn = QtWidgets.QPushButton(self)
         self.run_btn.setText("Daten auswerten")
-        self.run_btn.move(40, 295)
+        self.run_btn.move(40, 315)
         self.run_btn.resize(350, 50)
         self.run_btn.clicked.connect(self.start_thread)
         self.run_btn.setEnabled(False)
@@ -275,7 +310,7 @@ class MyWindow(QMainWindow):
         # Running Label
         self.running_text = QtWidgets.QLabel(self)
         self.running_text.setText("Daten werden ausgewertet")
-        self.running_text.move(42, 350)
+        self.running_text.move(42, 370)
         self.running_text.adjustSize()
         self.running_text.setVisible(False)
 
@@ -283,24 +318,24 @@ class MyWindow(QMainWindow):
         movie = QtGui.QMovie("./pacman_blue.gif")
         movie.setScaledSize(QtCore.QSize(30, 30))
         self.running_spinner.setMovie(movie)
-        self.running_spinner.move(210, 343)
+        self.running_spinner.move(210, 363)
         self.running_spinner.setVisible(False)
         movie.start()
 
         # Done Label
         self.done_text = QtWidgets.QLabel(self)
         self.done_text.setText("")
-        self.done_text.move(70, 350)
+        self.done_text.move(70, 370)
         self.done_text.adjustSize()
         self.done_icon = QLabel(self)
         self.done_icon.setPixmap(QtGui.QPixmap("./"+self.gui_icon_folder+"dialog-ok-apply-6.png").scaled(20, 20, QtCore.Qt.KeepAspectRatio))
-        self.done_icon.move(43, 343)
+        self.done_icon.move(43, 363)
         self.done_icon.setVisible(False)
 
         # Quit Button
         self.quit_btn = QtWidgets.QPushButton(self)
         self.quit_btn.setText("Beenden")
-        self.quit_btn.move(40, 370)
+        self.quit_btn.move(40, 390)
         self.quit_btn.resize(350, 50)
         self.quit_btn.clicked.connect(self.close)
         self.quit_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"application-exit-2.png"))
@@ -308,9 +343,10 @@ class MyWindow(QMainWindow):
 
         # Version Label
         self.version_label = QtWidgets.QLabel(self)
-        self.version_label.setText("V0.22")
-        self.version_label.move(200, 425)
-        self.version_label.adjustSize()
+        self.version_label.setText("V0.22.1")
+        self.version_label.move(0, 445)
+        self.version_label.resize(430, 20)
+        self.version_label.setAlignment(Qt.AlignCenter)
 
 
 def window():
