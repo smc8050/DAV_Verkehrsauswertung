@@ -4,25 +4,13 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.dates import bytespdate2num, num2date
-from matplotlib.ticker import Formatter
+import matplotlib.ticker as ticker
 import csv
 import pandas as pd
 import numpy as np
 from utils import IdCube
+import math
 
-
-class MyFormatter(Formatter):
-    def __init__(self, dates, fmt='%Y-%m-%d'):
-        self.dates = dates
-        self.fmt = fmt
-
-    def __call__(self, x, pos=0):
-        'Return the label for time x at position pos'
-        ind = int(np.round(x))
-        if ind >= len(self.dates) or ind < 0:
-            return ''
-
-        return num2date(self.dates[ind]).strftime(self.fmt)
 
 class PlotStrategy:
     def __init__(self, root_dir, cube, do_plots):
@@ -63,6 +51,9 @@ class PlotStrategy:
         ax.spines['right'].set_color('none')
         ax.spines['left'].set_color('none')
         ax.tick_params(left=False)
+        if plot_kind != "bar":
+            print("Days between ticks: ", math.ceil(len(df.T) / 10))
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(math.ceil(len(df.T)/10)))
 
         fig.autofmt_xdate()
 

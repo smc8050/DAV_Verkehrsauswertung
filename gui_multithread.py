@@ -180,10 +180,11 @@ class MyWindow(QMainWindow):
         msg.exec_()
 
     def debug_helper(self):
+        self.url_textbox.setText("https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/fa64fa70-6328-4d47-bcf0-1eff694d7c22/download/sid_dav_verkehrszaehlung_miv_od2031_2019.csv")
         self.save_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT"
         self.msid_list_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT/MSID_Input.txt"
-        self.start_date_textbox.setText("2020-01-01")
-        self.end_date_textbox.setText("2020-01-10")
+        self.start_date_textbox.setText("2019-01-01")
+        self.end_date_textbox.setText("2019-12-30")
         self.msid_path_btn.setStyleSheet("background-color: LightGreen")
         self.save_path_btn.setStyleSheet("background-color: LightGreen")
         self.run_btn.setEnabled(True)
