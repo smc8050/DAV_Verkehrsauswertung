@@ -53,7 +53,7 @@ class MyWindow(QMainWindow):
         self.initUI()
 
         # Helper function for debugging
-        debug = False
+        debug = True
 
         if debug:
             self.debug_helper()
@@ -123,13 +123,21 @@ class MyWindow(QMainWindow):
         else:
             self.csv_url = "https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/44607195-a2ad-4f9b-b6f1-d26c003d85a2/download/sid_dav_verkehrszaehlung_miv_od2031_2020.csv"
 
-        # Check ASP/MSP boolean and set value
+        # Check msp_asp boolean and set value
         msp_asp = False
         if self.check_msp_asp.isChecked(): msp_asp = True
 
-        # Check do plots boolean and set value
+        # Check do_plots boolean and set value
         do_plots = False
         if self.check_do_plots.isChecked(): do_plots = True
+
+        # Check exclude_weekends boolean and set value
+        exclude_weekends = True
+        if self.check_weekends.isChecked(): exclude_weekends = False
+
+        # Check exclude_holidays boolean and set value
+        exclude_holidays = True
+        if self.check_holidays.isChecked(): exclude_holidays = False
 
         # Check Input date Format
         if self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
@@ -151,7 +159,7 @@ class MyWindow(QMainWindow):
                 csv_url = self.csv_url
                 msid_list_path = self.msid_list_path
                 worker = Worker(DavAuswertung, save_path, csv_url, msid_list_path, Timestamp(start_date),
-                                Timestamp(end_date), msp_asp, do_plots)
+                                Timestamp(end_date), msp_asp, do_plots, exclude_weekends, exclude_holidays)
                 worker.signals.finished.connect(self.thread_complete)
                 # Execute in second thread
                 print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -197,7 +205,7 @@ class MyWindow(QMainWindow):
     def initUI(self):
 
         # deploy parameter
-        deploy = True
+        deploy = False
         if deploy:
             self.gui_icon_folder = ""
         else:
@@ -251,7 +259,6 @@ class MyWindow(QMainWindow):
         self.start_date_quickfill_btn.resize(100, 22)
         self.start_date_quickfill_btn.clicked.connect(self.quickfill_start)
 
-
         # End Datum
         self.end_label = QtWidgets.QLabel(self)
         self.end_label.setText("End Datum:")
@@ -278,7 +285,7 @@ class MyWindow(QMainWindow):
 
         # Do plots checkbox
         self.check_do_plots = QCheckBox("Graphen erstellen", self)
-        self.check_do_plots.move(250, 205)
+        self.check_do_plots.move(240, 205)
         self.check_do_plots.resize(320, 40)
         self.check_do_plots.setChecked(True)
 
@@ -287,6 +294,12 @@ class MyWindow(QMainWindow):
         self.check_weekends.move(50, 225)
         self.check_weekends.resize(320, 40)
         self.check_weekends.setChecked(False)
+
+        # Exclude holidays checkbox
+        self.check_holidays = QCheckBox("Ferientage auswerten", self)
+        self.check_holidays.move(240, 225)
+        self.check_holidays.resize(320, 40)
+        self.check_holidays.setChecked(False)
 
         # Select MSID List
         self.msid_path_btn = QtWidgets.QPushButton(self)
@@ -315,7 +328,7 @@ class MyWindow(QMainWindow):
         self.running_text.setVisible(False)
 
         self.running_spinner = QtWidgets.QLabel(self)
-        movie = QtGui.QMovie("./pacman_blue.gif")
+        movie = QtGui.QMovie("./"+self.gui_icon_folder+"pacman_blue.gif")
         movie.setScaledSize(QtCore.QSize(30, 30))
         self.running_spinner.setMovie(movie)
         self.running_spinner.move(210, 363)
