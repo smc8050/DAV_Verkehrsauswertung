@@ -60,8 +60,12 @@ class PlotStrategy:
         ax.spines['right'].set_color('none')
         ax.spines['left'].set_color('none')
         ax.tick_params(left=False)
+        '''
         if plot_kind != "bar":
             ax.xaxis.set_major_locator(ticker.MultipleLocator(math.ceil(len(df.T)/10)))
+        
+        '''
+
 
         # Dates on xaxis are tilted for more room
         fig.autofmt_xdate()

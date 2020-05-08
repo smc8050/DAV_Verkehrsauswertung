@@ -7,6 +7,8 @@ class DavAuswertung:
     '''
 
     def __init__(self, save_path, csv_url ,msid_list_path,start_date,end_date, msp_asp, do_plots, exclude_weekends, exclude_holidays):
+
+        #reading online csv with given parameters from GUI and save data
         result_IdCube = read_csv(msid_list_path, start_date, end_date, csv_url, exclude_weekends, exclude_holidays)
         if msp_asp:
             pl = PlotterContext(ExtendedPlotter(save_path, result_IdCube, do_plots, exclude_weekends, exclude_holidays))

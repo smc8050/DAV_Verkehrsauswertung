@@ -53,7 +53,7 @@ class MyWindow(QMainWindow):
         self.initUI()
 
         # Helper function for debugging
-        debug = True
+        debug = False
 
         if debug:
             self.debug_helper()
@@ -66,11 +66,12 @@ class MyWindow(QMainWindow):
 
         self.threadpool = QThreadPool() #Initialize threadpool
 
-        #load stylesheet
+        #load stylesheet for GUI
         sshFile = "dav_gui.stylesheet"
         with open(sshFile, "r") as fh:
             self.setStyleSheet(fh.read())
 
+    # opens Files Dialog to select MSID List
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog # <- uncomment for fancier dialog
@@ -82,6 +83,7 @@ class MyWindow(QMainWindow):
             if self.save_path != "" and self.msid_list_path != "" and self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
                 self.run_btn.setEnabled(True)
 
+    # opens folder dialog to select folder where the data is stored
     def selectFolderDialog(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select Directory")
         if folder_path:
@@ -90,7 +92,7 @@ class MyWindow(QMainWindow):
             if self.save_path != "" and self.msid_list_path != "" and self.start_date_textbox.text() != "" and self.end_date_textbox.text() != "":
                 self.run_btn.setEnabled(True)
 
-    #returns list with all paths and its names from txt files in selected directory
+    # returns list with all paths and its names from txt files in selected directory
     def selectMSIDGroups(self):
         MSID_Groups_folder = QFileDialog.getExistingDirectory(self, "Select Directory")
         if MSID_Groups_folder:
@@ -103,7 +105,7 @@ class MyWindow(QMainWindow):
             print(MSID_group_names)
         return MSID_group_paths, MSID_group_names
 
-
+    # this function gets called if the thread is completed
     def thread_complete(self):
         self.run_btn.setEnabled(True)
         self.run_btn.setText("Daten erneut auswerten")
@@ -115,7 +117,13 @@ class MyWindow(QMainWindow):
         self.done_icon.setVisible(True)
         print("THREAD COMPLETE!")
 
+    # this function starts the thread (thus the Gui stays responsive)
     def start_thread(self):
+
+        # Check if holiday list is up to date, and raise error if not
+        if datetime.datetime.now().year != 2020:
+            #print(datetime.datetime.now().year)
+            self.holiday_outdated()
 
         # Check Input URL
         if self.url_textbox.text() != "":
@@ -161,7 +169,7 @@ class MyWindow(QMainWindow):
                 worker = Worker(DavAuswertung, save_path, csv_url, msid_list_path, Timestamp(start_date),
                                 Timestamp(end_date), msp_asp, do_plots, exclude_weekends, exclude_holidays)
                 worker.signals.finished.connect(self.thread_complete)
-                # Execute in second thread
+                # Execute worker load thread
                 print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
                 print("Thread started...")
                 self.threadpool.start(worker)
@@ -169,6 +177,7 @@ class MyWindow(QMainWindow):
                 self.error_msg()
                 self.run_btn.setEnabled(True)
 
+    #this function displays a message box when the date has not the correct format
     def error_msg(text):
         msg = QMessageBox()
         msg.setGeometry(215, 250, 100, 100)
@@ -179,16 +188,29 @@ class MyWindow(QMainWindow):
         msg.setWindowTitle("Format-Fehler")
         msg.exec_()
 
+    # this function displays a message box when the holiday list is expired (01.01.2021)
+    def holiday_outdated(text):
+        msg = QMessageBox()
+        msg.setGeometry(215, 250, 100, 100)
+        msg.setBaseSize(400, 180)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText("Feiertagsliste nicht aktuell")
+        msg.setInformativeText('Bitte wenden Sie sich an:\ntobiac@ethz.ch oder csteivan@ethz.ch\nFeiertage werden beim Auswerten nicht ignoriert')
+        msg.setWindowTitle("Feiertagsliste nicht aktuell!")
+        msg.exec_()
+
+    #this function fills the userinterface with data for faster debugging
     def debug_helper(self):
-        self.url_textbox.setText("https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/fa64fa70-6328-4d47-bcf0-1eff694d7c22/download/sid_dav_verkehrszaehlung_miv_od2031_2019.csv")
+        #self.url_textbox.setText("https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/fa64fa70-6328-4d47-bcf0-1eff694d7c22/download/sid_dav_verkehrszaehlung_miv_od2031_2019.csv")
         self.save_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT"
         self.msid_list_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT/MSID_Input.txt"
-        self.start_date_textbox.setText("2019-01-01")
-        self.end_date_textbox.setText("2019-12-30")
+        self.start_date_textbox.setText("2020-01-01")
+        self.end_date_textbox.setText("2020-01-30")
         self.msid_path_btn.setStyleSheet("background-color: LightGreen")
         self.save_path_btn.setStyleSheet("background-color: LightGreen")
         self.run_btn.setEnabled(True)
 
+    #this function fills the start date box with the 1st of Jan. in the current year
     def quickfill_start(self):
         d = datetime.date.today()
         year_str = '{:04d}'.format(d.year)
@@ -196,6 +218,7 @@ class MyWindow(QMainWindow):
         day_str = '01'
         self.start_date_textbox.setText(year_str+"-"+month_str+"-"+day_str)
 
+    # this function fills the end date box with current date
     def quickfill_end(self):
         d = datetime.date.today()
         year_str = '{:04d}'.format(d.year)
@@ -203,17 +226,21 @@ class MyWindow(QMainWindow):
         day_str = '{:02d}'.format(d.day)
         self.end_date_textbox.setText(year_str + "-" + month_str + "-" + day_str)
 
+    #this function initializes the GUI
     def initUI(self):
 
         # deploy parameter
-        deploy = False
+        deploy = True
         if deploy:
             self.gui_icon_folder = ""
         else:
             self.gui_icon_folder = "gui_icons/"
 
+        #GUI main dimensions and title
         self.setGeometry(200, 200, 430, 470)
         self.setWindowTitle("DAV Verkehrsauswertung")
+
+        # URL Label
         self.url_label = QtWidgets.QLabel(self)
         self.url_label.setText("URL zum Online CSV file\n(Leer lassen für Daten von 2020):")
         self.url_label.move(50, 10)
@@ -328,6 +355,7 @@ class MyWindow(QMainWindow):
         self.running_text.adjustSize()
         self.running_text.setVisible(False)
 
+        # Pacman loading Icon
         self.running_spinner = QtWidgets.QLabel(self)
         movie = QtGui.QMovie("./"+self.gui_icon_folder+"pacman_blue.gif")
         movie.setScaledSize(QtCore.QSize(30, 30))
@@ -363,6 +391,7 @@ class MyWindow(QMainWindow):
         self.version_label.setAlignment(Qt.AlignCenter)
 
 
+# this function opens the GUI window
 def window():
 
     app = QApplication(sys.argv)
