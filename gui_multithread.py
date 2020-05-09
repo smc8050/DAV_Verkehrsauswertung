@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from dav_auswertung import DavAuswertung
 from utils import Timestamp
-import re, glob, os, datetime
+import re, glob, os, datetime, sys
 
 class WorkerSignals(QObject):
     '''
@@ -202,8 +202,8 @@ class MyWindow(QMainWindow):
     #this function fills the userinterface with data for faster debugging
     def debug_helper(self):
         #self.url_textbox.setText("https://data.stadt-zuerich.ch/dataset/6212fd20-e816-4828-a67f-90f057f25ddb/resource/fa64fa70-6328-4d47-bcf0-1eff694d7c22/download/sid_dav_verkehrszaehlung_miv_od2031_2019.csv")
-        self.save_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT"
-        self.msid_list_path = "/Users/steivanclagluna/Documents/Coding/Python/DAV_Verkehrsauswertung/GIT/MSID_Input.txt"
+        self.save_path = "C:/Users/k97zY36GOn/PycharmProjects/DAV_Verkehrsauswertung"
+        self.msid_list_path = "C:/Users/k97zY36GOn/PycharmProjects/DAV_Verkehrsauswertung/MSID_Input.txt"
         self.start_date_textbox.setText("2020-01-01")
         self.end_date_textbox.setText("2020-01-30")
         self.msid_path_btn.setStyleSheet("background-color: LightGreen")
@@ -226,15 +226,15 @@ class MyWindow(QMainWindow):
         day_str = '{:02d}'.format(d.day)
         self.end_date_textbox.setText(year_str + "-" + month_str + "-" + day_str)
 
+    # this function quits the programm
+    def quit_programm(self):
+        self.close
+        sys.exit()
     #this function initializes the GUI
     def initUI(self):
 
-        # deploy parameter
-        deploy = True
-        if deploy:
-            self.gui_icon_folder = ""
-        else:
-            self.gui_icon_folder = "gui_icons/"
+        # set Gui icon folder
+        self.gui_icon_folder = "gui_icons/"
 
         #GUI main dimensions and title
         self.setGeometry(200, 200, 430, 470)
@@ -379,13 +379,13 @@ class MyWindow(QMainWindow):
         self.quit_btn.setText("Beenden")
         self.quit_btn.move(40, 390)
         self.quit_btn.resize(350, 50)
-        self.quit_btn.clicked.connect(self.close)
+        self.quit_btn.clicked.connect(self.quit_programm)
         self.quit_btn.setIcon(QtGui.QIcon("./"+self.gui_icon_folder+"application-exit-2.png"))
         self.quit_btn.setIconSize(QtCore.QSize(30, 30))
 
         # Version Label
         self.version_label = QtWidgets.QLabel(self)
-        self.version_label.setText("V0.22.1")
+        self.version_label.setText("V0.23")
         self.version_label.move(0, 445)
         self.version_label.resize(430, 20)
         self.version_label.setAlignment(Qt.AlignCenter)

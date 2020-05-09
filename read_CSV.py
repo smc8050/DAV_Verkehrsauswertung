@@ -12,7 +12,7 @@ def read_csv(msid_path, start, end, csv_url, exclude_weekends, exclude_holidays)
     debug = False # when debugging the data will not be loaded from the web (pickle file must exist -> run without debugging mode creates pickle file)
     pickle_file = 'IdCube'
     if not debug:
-        #initialize 3 dimensional Array with zeros
+        #initialize3 dimensional Array with zeros
         # A = [MSID, Dates, Hours]
         msid_list = [line.rstrip('\n') for line in open(msid_path)]
         I = len(msid_list)

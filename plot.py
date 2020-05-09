@@ -15,12 +15,12 @@ import math
 
 class PlotStrategy:
     """Base strategy class"""
-    def __init__(self, root_dir, cube, do_plots, exclude_weekends, exclude_holidays):
+    def __init__(self, rootDir, cube, do_plots, exclude_weekends, exclude_holidays):
         # Create foder structure if not existent in location root_dir
-        self.root_dir = os.path.join(root_dir,'export_'+str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")))
+        self.root_dir = os.path.join(rootDir,'export_'+str(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")))
         self.sub_dir = self.root_dir
         if not os.path.isdir(self.root_dir):
-            os.makedirs(self.root_dir)
+            os.mkdir(self.root_dir)
         """
         self.sub_dir = os.path.join(self.root_dir, 'byDays')
         if not os.path.isdir(self.sub_dir):
@@ -43,8 +43,7 @@ class PlotStrategy:
     def _plot_curve(self, df, basename, title, subtitle, xlabel, plot_kind='line'):
         fig, ax = plt.subplots()
         if plot_kind == 'line':
-            df.plot(ax=ax, kind=plot_kind, color=(0, 0.3, 0.7, 1), marker='h', \
-                markerfacecolor='lightgreen', markeredgewidth=1, markersize=6, markevery=1)
+            df.plot(ax=ax, kind=plot_kind, color=(0, 0.3, 0.7, 1), marker='o', markersize=1, markeredgecolor='r' )
         else:
             df.plot(ax=ax, kind=plot_kind, color=(0, 0.3, 0.7, 1))
 
@@ -65,8 +64,6 @@ class PlotStrategy:
             ax.xaxis.set_major_locator(ticker.MultipleLocator(math.ceil(len(df.T)/10)))
         
         '''
-
-
         # Dates on xaxis are tilted for more room
         fig.autofmt_xdate()
 
@@ -128,7 +125,7 @@ class DefaultPlotter(PlotStrategy):
             # Plotting type depending on the number of dates
             kind = 'bar' if len(date_list) < 25 else 'line'
             for index, row in df.iterrows():
-                print(index)
+                print(index, "Plot erstellt")
                 basename = os.path.join(self.sub_dir, index)
                 # Uncomment to save csv of data used to generate a plot
                 #self._save_csv(row, basename)
@@ -151,7 +148,7 @@ class ExtendedPlotter(PlotStrategy):
         self.asp_cube = self.cube.get_dayslice(self.asp_interval)
 
     def plot(self):
-        print("Processing sorted by days:")
+        print("Plots werden erstellt...")
         slice, msid_list, date_list = self.cube.sum_hours()
         msp_slice, _, _ = self.msp_cube.sum_hours()
         asp_slice, _, _ = self.asp_cube.sum_hours()
@@ -167,20 +164,21 @@ class ExtendedPlotter(PlotStrategy):
             # Plotting type depending on the number of dates
             kind = 'bar' if len(date_list) < 25 else 'line'
             for (index, row), (_, row_msp), (_, row_asp) in zip(df_total.iterrows(), df_msp.iterrows(), df_asp.iterrows()):
-                print(index)
+                print(index, "Plot erstellt")
                 basedir = os.path.join(self.sub_dir, index)
-                os.makedirs(basedir)
+                if not os.path.isdir(basedir):
+                    os.makedirs(basedir)
                 # Uncomment to save csv of data used to generate a plot
                 plot_title = 'Tagessumme (MSID: '+index+')'
-                self._plot_curve(row, basedir+'/gesamt_'+index, title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
+                self._plot_curve(row, os.path.join(basedir, 'gesamt_'+index), title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
 
                 time_interval = "{0:02d} - {1:02d} Uhr".format(*self.msp_interval)
                 plot_title = 'Summe Morgenspitze '+time_interval+' (MSID: '+index+')'
-                self._plot_curve(row_msp, basedir+'/msp_'+index, title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
+                self._plot_curve(row_msp, os.path.join(basedir, 'msp_'+index), title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
 
                 time_interval = "{0:02d} - {1:02d} Uhr".format(*self.asp_interval)
                 plot_title = 'Summe Abendspitze '+time_interval+' (MSID: '+index+')'
-                self._plot_curve(row_asp, basedir+'/asp_'+index, title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
+                self._plot_curve(row_asp, os.path.join(basedir, 'asp_'+index), title=plot_title, subtitle=self.time_frame_title, xlabel='Datum', plot_kind=kind)
 
         # Save the whole slice to a csv
         self._save_csv(df_total, os.path.join(self.sub_dir, 'tage_summe'))
